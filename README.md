@@ -194,9 +194,7 @@ Track these to measure framework maturity:
 **Indira Réquiz** is a Data Engineer and AI Systems Builder based in Buenos Aires. This framework is developed from *Economía Agéntica* (2026), a book on organizational governance infrastructure for the agentic economy.
 
 - Book: [Economía Agéntica](https://github.com/rainvare/agentic-governance-framework)
-- GitHub: [github.com/rainvare](https://github.com/rainvare)
-- Portfolio: [rainvare.github.io](https://rainvare.github.io)
-- Related work: [seldon-corporate](https://github.com/rainvare/seldon-corporate) — organizational resilience metrics
+
 
 ---
 
