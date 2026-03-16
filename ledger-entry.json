@@ -1,0 +1,238 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rainvare/agentic-governance-framework/ledger-entry.json",
+  "title": "Agent Ledger Entry",
+  "description": "Schema for a single entry in the organizational Agent Ledger. The Ledger is the cognitive accounting system of the agentic economy — it records not just what the agent did, but why and how. Part of the Agentic Governance Framework by Indira Réquiz, 2026.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "entry_id",
+    "agent_identity",
+    "task_objective",
+    "documented_reasoning",
+    "tools_used",
+    "result",
+    "validation",
+    "risk_level",
+    "timestamp"
+  ],
+  "properties": {
+    "entry_id": {
+      "type": "string",
+      "description": "Unique identifier for this Ledger entry. Format: {org_slug}/ledger/{yyyymmdd}/{uuid}"
+    },
+    "agent_identity": {
+      "type": "object",
+      "description": "Full organizational identity of the agent — not just model name.",
+      "required": ["agent_id", "org_role", "model"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Agent's unique ID in the organizational registry"
+        },
+        "org_role": {
+          "type": "string",
+          "description": "Organizational role (e.g., 'financial-analysis-agent')"
+        },
+        "model": {
+          "type": "string",
+          "description": "Underlying model identifier (e.g., 'claude-sonnet-4-6', 'gpt-4o-2025')"
+        },
+        "permissions_at_execution": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Exact permission set active during this task execution"
+        }
+      }
+    },
+    "task_objective": {
+      "type": "object",
+      "description": "What the agent was trying to achieve — in verifiable operational terms.",
+      "required": ["description", "success_criteria"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Operational description of the task. Not the raw prompt — the distilled objective."
+        },
+        "success_criteria": {
+          "type": "string",
+          "description": "Explicit definition of what constitutes successful completion"
+        },
+        "amp_task_id": {
+          "type": "string",
+          "description": "AMP task_id if this task was initiated via an AMP message"
+        }
+      }
+    },
+    "documented_reasoning": {
+      "type": "object",
+      "description": "The reasoning trace — this is what transforms a trajectory log into a decision trace.",
+      "required": ["intermediate_steps"],
+      "properties": {
+        "intermediate_steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step": { "type": "integer" },
+              "action": { "type": "string" },
+              "rationale": { "type": "string" }
+            }
+          },
+          "description": "Step-by-step reasoning chain"
+        },
+        "alternatives_considered": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alternative approaches considered and why they were rejected"
+        },
+        "critical_decision_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "point": { "type": "string" },
+              "choice_made": { "type": "string" },
+              "basis": { "type": "string" }
+            }
+          },
+          "description": "Moments where the agent chose between meaningfully different paths"
+        }
+      }
+    },
+    "tools_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_name": { "type": "string" },
+          "invocation_count": { "type": "integer" },
+          "external_systems": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "description": "All tools and external systems accessed during task execution"
+    },
+    "result": {
+      "type": "object",
+      "description": "The output — anchored to the reasoning chain above.",
+      "required": ["status", "output_ref"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["SUCCESS", "PARTIAL", "FAILURE", "ESCALATED", "SAFE_MODE"],
+          "description": "Outcome status"
+        },
+        "output_ref": {
+          "type": "string",
+          "description": "Reference to the output artifact (URI, file path, or inline if small)"
+        },
+        "output_summary": {
+          "type": "string",
+          "description": "Human-readable summary of what was produced"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "description": "How the output was validated. Applies the principle of validator independence.",
+      "required": ["method", "validator_independence"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["AUTOMATED_LAYER_1", "AUTOMATED_LAYER_2", "CROSS_MODEL_LAYER_3", "HUMAN_UNDERWRITER", "AGENTIC_COURT_2OF3", "NONE"],
+          "description": "Validation method applied"
+        },
+        "validator_independence": {
+          "type": "boolean",
+          "description": "Was the validator a different model/system from the producer? Required for LAYER_3+"
+        },
+        "validator_model": {
+          "type": "string",
+          "description": "Model used for cross-model validation (if applicable)"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["PASSED", "FAILED", "PARTIAL", "PENDING", "SKIPPED"],
+          "description": "Validation outcome"
+        },
+        "issues_found": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Any issues identified during validation"
+        }
+      }
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["CRITICAL", "RELEVANT", "ROUTINE"],
+      "description": "Risk classification that determines Ledger granularity.\n- CRITICAL: irreversible high-impact action → full trace\n- RELEVANT: reversible medium-impact → standard entry\n- ROUTINE: low-impact or repeated → compressed hash entry"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of task execution"
+    },
+    "safe_mode_activated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether Safe Mode was triggered during this task"
+    },
+    "integrity_hash": {
+      "type": "string",
+      "description": "Optional: cryptographic hash of this entry for immutability verification (recommended for CRITICAL entries)"
+    }
+  },
+  "examples": [
+    {
+      "entry_id": "acme-corp/ledger/20260316/b3f8a1c2",
+      "agent_identity": {
+        "agent_id": "acme-corp/financial-analysis/a1b2c3d4",
+        "org_role": "financial-analysis-agent",
+        "model": "claude-sonnet-4-6",
+        "permissions_at_execution": ["read:financial-data", "write:reports"]
+      },
+      "task_objective": {
+        "description": "Generate Q1 2026 revenue analysis by product line with YoY comparison",
+        "success_criteria": "Report includes revenue by product line, YoY comparison, and at least 3 variance explanations",
+        "amp_task_id": "task-2026-0316-001"
+      },
+      "documented_reasoning": {
+        "intermediate_steps": [
+          { "step": 1, "action": "Query Snowflake for Q1 2026 revenue by product", "rationale": "Primary data source specified in task" },
+          { "step": 2, "action": "Query Snowflake for Q1 2025 revenue for YoY baseline", "rationale": "Required for comparison as per success criteria" },
+          { "step": 3, "action": "Calculate variance and identify top 3 drivers", "rationale": "Completeness criteria requires 3 variance explanations" }
+        ],
+        "alternatives_considered": ["Using cached monthly reports instead of direct query — rejected: may not reflect end-of-period adjustments"],
+        "critical_decision_points": [
+          {
+            "point": "Currency normalization",
+            "choice_made": "Convert all to USD at period-average exchange rate",
+            "basis": "Consistent with OVL definition 'revenue_reporting_standard' v2.1"
+          }
+        ]
+      },
+      "tools_used": [
+        { "tool_name": "snowflake-query", "invocation_count": 3, "external_systems": ["snowflake.acme.internal"] },
+        { "tool_name": "report-generator", "invocation_count": 1, "external_systems": [] }
+      ],
+      "result": {
+        "status": "SUCCESS",
+        "output_ref": "https://reports.acme.internal/q1-2026-revenue-analysis.pdf",
+        "output_summary": "Q1 revenue $12.4M, up 18% YoY. Top variance drivers: new enterprise tier (+$2.1M), EU expansion (+$800K), churn in SMB segment (-$300K)."
+      },
+      "validation": {
+        "method": "AUTOMATED_LAYER_2",
+        "validator_independence": true,
+        "validator_model": "gpt-4o-2025",
+        "result": "PASSED",
+        "issues_found": []
+      },
+      "risk_level": "RELEVANT",
+      "timestamp": "2026-03-16T09:23:41Z",
+      "safe_mode_activated": false
+    }
+  ]
+}

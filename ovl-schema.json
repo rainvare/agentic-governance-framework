@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rainvare/agentic-governance-framework/ovl-schema.json",
+  "title": "Organizational Vocabulary Layer (OVL)",
+  "description": "Schema for an organization's OVL — the semantic alignment layer that ensures agents on different models process the same concepts consistently. Part of the Agentic Governance Framework by Indira Réquiz, 2026.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["ovl_id", "org_id", "version", "terms"],
+  "properties": {
+    "ovl_id": {
+      "type": "string",
+      "description": "Unique identifier for this OVL instance"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization this OVL belongs to"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this OVL (e.g., '2.1.0')"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date from which this OVL version is active"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Underwriter of Liability who approved this version. No term can become PRESCRIBED without human approval."
+    },
+    "terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["term", "definition", "status", "domain"],
+        "properties": {
+          "term": {
+            "type": "string",
+            "description": "The term being defined"
+          },
+          "definition": {
+            "type": "string",
+            "description": "Operational definition — precise, unambiguous, testable"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PRESCRIBED", "CANDIDATE", "DEPRECATED"],
+            "description": "PRESCRIBED: active, injected into all agent contexts in this domain. CANDIDATE: proposed, pending human approval. DEPRECATED: no longer active, kept for audit trail."
+          },
+          "domain": {
+            "type": "string",
+            "description": "Business domain this term applies to (e.g., 'finance', 'legal', 'operations', 'all')"
+          },
+          "examples": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Concrete examples of correct usage"
+          },
+          "counterexamples": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Examples of incorrect usage this definition aims to prevent"
+          },
+          "divergence_history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "detected": { "type": "string", "format": "date" },
+                "model_a": { "type": "string" },
+                "model_b": { "type": "string" },
+                "discrepancy": { "type": "string" }
+              }
+            },
+            "description": "Record of cross-model divergences that motivated this definition (dynamic mode history)"
+          },
+          "injection_template": {
+            "type": "string",
+            "description": "Exact text to inject into agent context when this term is relevant. Wrap in <ovl> tags."
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "ovl_id": "acme-corp-ovl-main",
+      "org_id": "acme-corp",
+      "version": "2.1.0",
+      "effective_date": "2026-03-01",
+      "approved_by": "maria.sanchez@acme.com (Chief Risk Officer)",
+      "terms": [
+        {
+          "term": "urgent",
+          "definition": "A task or message classified as urgent requires a human decision-maker to be notified within 4 hours and a resolution or escalation within 8 business hours. It does not imply immediate interruption of ongoing work.",
+          "status": "PRESCRIBED",
+          "domain": "all",
+          "examples": [
+            "A customer contract dispute > $50K is urgent",
+            "A system outage affecting >10% of users is urgent"
+          ],
+          "counterexamples": [
+            "A routine report delayed by 1 hour is NOT urgent",
+            "A question requiring same-day response is NOT urgent — use 'priority'"
+          ],
+          "divergence_history": [
+            {
+              "detected": "2026-01-15",
+              "model_a": "claude-sonnet-4-6",
+              "model_b": "gpt-4o-2025",
+              "discrepancy": "claude interpreted 'urgent' as 'respond within 4h'; gpt-4o interpreted as 'respond within same business day'. Led to 3 missed escalations."
+            }
+          ],
+          "injection_template": "<ovl>ORGANIZATIONAL DEFINITION — 'urgent': Requires human notification within 4 hours and resolution/escalation within 8 business hours. NOT equivalent to 'immediate' or 'same-day'.</ovl>"
+        },
+        {
+          "term": "approved",
+          "definition": "A document, action, or output is 'approved' only when it has received explicit written sign-off from an authorized Underwriter of Liability for its domain. Implicit approval (silence, verbal confirmation, or automated pass) does not constitute 'approved' status.",
+          "status": "PRESCRIBED",
+          "domain": "all",
+          "examples": [
+            "An invoice marked as approved with digital signature from Finance Director",
+            "A contract with explicit approval timestamp in the Ledger"
+          ],
+          "counterexamples": [
+            "An output that passed automated testing is NOT approved — it is 'validated'",
+            "A task completed without rejection is NOT approved"
+          ],
+          "injection_template": "<ovl>ORGANIZATIONAL DEFINITION — 'approved': Requires explicit written sign-off from authorized Underwriter. Automated validation pass ≠ approved. Silence ≠ approved.</ovl>"
+        },
+        {
+          "term": "revenue_reporting_standard",
+          "definition": "Revenue figures in all reports default to USD at the period-average exchange rate from the 1st to last business day of the reporting period. Source: ECB reference rates via Snowflake fx_rates table. Do not use spot rates unless explicitly requested.",
+          "status": "PRESCRIBED",
+          "domain": "finance",
+          "examples": [
+            "Q1 2026 EUR revenue: convert at average EUR/USD rate Jan 2 – Mar 31 2026"
+          ],
+          "injection_template": "<ovl>FINANCIAL STANDARD — Revenue reporting: use USD at period-average FX rate (ECB reference, Snowflake fx_rates table). Period = first to last business day of reporting period.</ovl>"
+        }
+      ]
+    }
+  ]
+}

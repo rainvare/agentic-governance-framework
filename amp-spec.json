@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rainvare/agentic-governance-framework/amp-spec.json",
+  "title": "Agent Message Protocol (AMP)",
+  "description": "Open standard for organizational agent communication. Extends A2A/ACP with governance semantics: accountability, traceability, and semantic alignment. AMP v1.0 — Indira Réquiz, 2026.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "amp_version",
+    "sender",
+    "intent",
+    "ephemeral_context",
+    "expected_output",
+    "constraints"
+  ],
+  "properties": {
+    "amp_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "AMP protocol version. Always '1.0' for this spec."
+    },
+    "sender": {
+      "type": "object",
+      "description": "Organizational identity of the sending agent — not just a name or model, but a role anchored to the Ledger.",
+      "required": ["agent_id", "org_role"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Unique identifier in the organizational Ledger. Format: {org_slug}/{agent_role}/{uuid}"
+        },
+        "org_role": {
+          "type": "string",
+          "description": "Functional role of this agent within the organization (e.g., 'financial-analysis-agent', 'content-review-agent')"
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Active permission scopes for this agent at time of message"
+        },
+        "ledger_ref": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI to this agent's identity entry in the organizational Ledger"
+        }
+      }
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["REQUEST", "DELEGATE", "REPORT", "ESCALATE"],
+      "description": "Organizational intent of the message.\n- REQUEST: Asking another agent to perform a task\n- DELEGATE: Transferring full ownership of a task\n- REPORT: Returning results to a requester or logging to the Ledger\n- ESCALATE: Flagging a situation that exceeds the agent's scope or confidence"
+    },
+    "ephemeral_context": {
+      "type": "object",
+      "description": "Context relevant only to this specific communication — distinct from the full history in the Ledger.",
+      "required": ["task_id"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Ledger task ID this message is associated with"
+        },
+        "background": {
+          "type": "string",
+          "description": "Relevant context for this communication only. Do not repeat full Ledger history here."
+        },
+        "ovl_version": {
+          "type": "string",
+          "description": "Version of the Organizational Vocabulary Layer active at time of sending. Receiver should verify alignment."
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Capabilities available to the receiving agent for this task. Explicit tool listing reduces scope ambiguity."
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Limits on scope, time, resources, and reversibility for the receiving agent.",
+      "required": ["reversibility"],
+      "properties": {
+        "time_limit": {
+          "type": "string",
+          "description": "ISO 8601 duration (e.g., 'PT4H' = 4 hours). Absence means no hard deadline."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Explicit scope boundary. What the agent CANNOT do in executing this task."
+        },
+        "reversibility": {
+          "type": "string",
+          "enum": ["REVERSIBLE", "IRREVERSIBLE"],
+          "description": "IRREVERSIBLE actions require pre-execution validation (human-in-the-loop or Capa 3 testing). REVERSIBLE allows post-hoc validation."
+        }
+      }
+    },
+    "expected_output": {
+      "type": "object",
+      "description": "Precise specification of the required result. The more specific this is, the less ontological drift occurs.",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Output format: 'json', 'markdown', 'structured-report', 'decision-trace', 'free-text', etc."
+        },
+        "detail_level": {
+          "type": "string",
+          "enum": ["SUMMARY", "DETAILED", "FULL_TRACE"],
+          "description": "SUMMARY: key result only. DETAILED: result + reasoning. FULL_TRACE: complete decision trace for Ledger entry."
+        },
+        "completeness_criteria": {
+          "type": "string",
+          "description": "What constitutes 'done'. Explicit criteria prevent premature task completion."
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "description": "Sender's epistemic state about the information being transmitted. Optional but recommended for ESCALATE intents.",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence score from 0.0 (no confidence) to 1.0 (full confidence)"
+        },
+        "basis": {
+          "type": "string",
+          "description": "What grounds this confidence level (e.g., 'verified against 3 independent sources', 'extrapolated from incomplete data')"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "amp_version": "1.0",
+      "sender": {
+        "agent_id": "acme-corp/financial-analysis/a1b2c3d4",
+        "org_role": "financial-analysis-agent",
+        "permissions": ["read:financial-data", "write:reports"],
+        "ledger_ref": "https://ledger.acme.internal/agents/a1b2c3d4"
+      },
+      "intent": "DELEGATE",
+      "ephemeral_context": {
+        "task_id": "task-2026-0316-001",
+        "background": "Q1 revenue analysis requested by CFO. Data from Snowflake warehouse, period Jan-Mar 2026.",
+        "ovl_version": "acme-ovl-v2.1"
+      },
+      "tools": ["snowflake-read", "report-generator", "chart-builder"],
+      "constraints": {
+        "time_limit": "PT2H",
+        "scope": "Read-only access to financial data. No external API calls. No email transmission.",
+        "reversibility": "REVERSIBLE"
+      },
+      "expected_output": {
+        "format": "structured-report",
+        "detail_level": "DETAILED",
+        "completeness_criteria": "Report includes revenue by product line, YoY comparison, and at least 3 variance explanations with supporting data."
+      },
+      "confidence": {
+        "score": 0.9,
+        "basis": "Data source is primary system of record, verified connection at task start"
+      }
+    },
+    {
+      "amp_version": "1.0",
+      "sender": {
+        "agent_id": "acme-corp/customer-support/x9y8z7w6",
+        "org_role": "customer-support-agent",
+        "permissions": ["read:tickets", "write:responses"],
+        "ledger_ref": "https://ledger.acme.internal/agents/x9y8z7w6"
+      },
+      "intent": "ESCALATE",
+      "ephemeral_context": {
+        "task_id": "task-2026-0316-047",
+        "background": "Customer ticket #98234. Standard resolution attempts failed. Customer mentions contract violation. Context: 4 prior interactions, 2 failed resolution attempts, customer is enterprise tier.",
+        "ovl_version": "acme-ovl-v2.1"
+      },
+      "tools": [],
+      "constraints": {
+        "reversibility": "IRREVERSIBLE"
+      },
+      "expected_output": {
+        "format": "decision-trace",
+        "detail_level": "FULL_TRACE",
+        "completeness_criteria": "Resolution decision with legal team sign-off if contract terms are involved."
+      },
+      "confidence": {
+        "score": 0.3,
+        "basis": "Situation involves contract interpretation outside agent's training scope"
+      }
+    }
+  ]
+}
